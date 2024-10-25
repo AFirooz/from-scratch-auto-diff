@@ -1,3 +1,4 @@
+import math
 
 class Value:
     """ Stores a single scalar value and its gradient.
@@ -78,7 +79,7 @@ class Value:
         return out
 
     def sigmoid(self):
-        out = Value(1 / (1 + math.exp(-self.data)), _children=(self,), _op='sigmoid')
+        out = Value(1 / (1 + math.exp(-self.data)), _children=(self,), _op='Sigmoid')
 
         # see _backward implementation in __add__() and __mul__() for details
         def _backward():
@@ -142,9 +143,9 @@ class Value:
     def __rtruediv__(self, other): # other / self
         return other * self**-1
 
-    def __str__(self):
-        """ Used when printing the object """
-        data_grad = f"data={self.data}, grad={self.grad}"
+    def debug(self)->str:
+        """ Use to view the computational graph in text mode. """
+        data_grad = f"data={self.data:.3f}, grad={self.grad:.3f}"
         
         # If no children, just return the data and grad info
         if len(self._prev) == 0:
@@ -156,7 +157,7 @@ class Value:
         
         # Add children indented and aligned
         for child in self._prev:
-            child_lines = str(child).split('\n')
+            child_lines = child.debug().split('\n')
             for j, line in enumerate(child_lines):
                 if line:
                     # Add two spaces of indentation per level plus a vertical pipe
