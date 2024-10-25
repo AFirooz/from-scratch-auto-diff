@@ -146,14 +146,15 @@ class Value:
     def debug(self)->str:
         """ Use to view the computational graph in text mode. """
         data_grad = f"data={self.data:.3f}, grad={self.grad:.3f}"
+        data_label = f"{self.label}" if self.label is not None else "Value"
         
         # If no children, just return the data and grad info
         if len(self._prev) == 0:
-            return "Value(" + data_grad + ")\n"
+            return f"{data_label}({data_grad})\n"
         operation = f"operation='{self._op}'"
         
         # Format with fixed-width fields
-        txt = f"Value({data_grad}, {operation}):\n"
+        txt = f"{data_label}({data_grad}, {operation}):\n"
         
         # Add children indented and aligned
         for child in self._prev:
