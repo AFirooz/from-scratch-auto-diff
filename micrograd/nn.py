@@ -2,12 +2,15 @@ import random
 from micrograd.engine import Value
 
 class Module:
-
+    """Base class that holds common functionality."""
     def zero_grad(self):
         for p in self.parameters():
             p.grad = 0
 
     def parameters(self):
+        """Return a list of parameters (weights and biases) of the module.
+        By default, it returns an empty list. Subclasses should override this method.
+        """
         return []
 
 class Neuron(Module):
