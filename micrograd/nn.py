@@ -1,8 +1,9 @@
 import random
-from micrograd.engine import Value
+from engine import Value
 
 class Module:
     """Base class that holds common functionality."""
+
     def zero_grad(self):
         for p in self.parameters():
             p.grad = 0
@@ -14,42 +15,71 @@ class Module:
         return []
 
 class Neuron(Module):
+    """A single neuron with weights and bias."""
 
-    def __init__(self, nin, nonlin=True):
-        self.w = [Value(random.uniform(-1,1)) for _ in range(nin)]
-        self.b = Value(0)
-        self.nonlin = nonlin
+    def __init__(self, nin, nonlin:str=None):
+        """
+        If nonlin is None, the neuron will be linear. Otherwise, it will apply the specified nonlinearity using lamda functions.
+        """
+        self.w = [Value(random.uniform(-1,1), label=f'w{i}') for i in range(nin)]
+        self.b = Value(0, label='b')
+
+        if nonlin is not None:
+            assert nonlin in ["relu", "sigmoid"], "Invalid nonlinearity. See Neuron.__init__()."
+            self.str_nonlin = nonlin
+            match nonlin:
+                case "relu":
+                    self.nonlin = lambda x: x.relu() # assuming x is a Value object and the relu method is defined in Value class.
+                case "sigmoid":
+                    self.nonlin = lambda x: x.sigmoid()
+        else:
+            self.nonlin = lambda x: x
+            self.str_nonlin = 'linear'
 
     def __call__(self, x):
-        act = sum((wi*xi for wi,xi in zip(self.w, x)), self.b)
-        return act.relu() if self.nonlin else act
+        assert len(x) == len(self.w), "X size must match weights size."
+        z = sum((wi*xi for wi,xi in zip(self.w, x)), self.b); z.label = 'z'
+        act = self.nonlin(z); act.label = 'act'
+        return act
 
     def parameters(self):
         return self.w + [self.b]
 
     def __repr__(self):
-        return f"{'ReLU' if self.nonlin else 'Linear'}Neuron({len(self.w)})"
+        return f"{self.str_nonlin}Neuron(in:{len(self.w)})"
 
 class Layer(Module):
+    """A layer of neurons."""
 
-    def __init__(self, nin, nout, **kwargs):
+    def __init__(self, nin:int, nout:int, **kwargs):
+        """
+        nin: number of inputs to each neuron
+        nout: number of neurons in the layer
+        """
         self.neurons = [Neuron(nin, **kwargs) for _ in range(nout)]
 
     def __call__(self, x):
-        out = [n(x) for n in self.neurons]
+        out = [n(x) for n in self.neurons] # we just call each neuron and collect the outputs in a list
         return out[0] if len(out) == 1 else out
 
     def parameters(self):
-        return [p for n in self.neurons for p in n.parameters()]
+        return [p for n in self.neurons for p in n.parameters()] # for n in self.neurons: for p in n.parameters(): collect p
 
     def __repr__(self):
         return f"Layer of [{', '.join(str(n) for n in self.neurons)}]"
 
 class MLP(Module):
+    """Multi-layer perceptron
+    nin: An integer representing the number of input neurons (or features) for the network.
+    nouts: A list of integers, where each integer specifies the number of neurons in each successive hidden layer.
+    """
 
-    def __init__(self, nin, nouts):
+    def __init__(self, nin:int, nouts:list):
         sz = [nin] + nouts
-        self.layers = [Layer(sz[i], sz[i+1], nonlin=i!=len(nouts)-1) for i in range(len(nouts))]
+        self.layers = []
+        for i in range(len(sz)-1):
+            nonlin = 'relu' if i != len(sz)-2 else None  # not applying nonlinearity to the last layer. Just calculating the logits.
+            self.layers.append(Layer(sz[i], sz[i+1], nonlin=nonlin))
 
     def __call__(self, x):
         for layer in self.layers:
@@ -60,4 +90,5 @@ class MLP(Module):
         return [p for layer in self.layers for p in layer.parameters()]
 
     def __repr__(self):
-        return f"MLP of [{', '.join(str(layer) for layer in self.layers)}]"
+        n = ',\n' # to avoid SyntaxError of using backslash in f-string
+        return f"MLP of [\n{n.join(str(layer) for layer in self.layers)}\n]"
