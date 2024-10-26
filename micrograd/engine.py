@@ -93,6 +93,15 @@ class Value:
         out._backward = _backward
         return out
 
+    def linear(self):
+        out = Value(self.data, (self,), 'Linear')
+
+        def _backward():
+            self.grad += out.grad
+        out._backward = _backward
+
+        return out
+
     def _topo_sort(self):
         """
         A topological sort (or order) is a graph traversal in which each node v is visited only after all its dependencies are visited.
@@ -142,6 +151,30 @@ class Value:
 
     def __rtruediv__(self, other): # other / self
         return other * self**-1
+
+    def __lt__(self, other): # self < other
+        assert isinstance(other, (Value, int, float)), f"Can only compare a Value with either another Value, int or float. \nCan not compare with {type(other)=}"
+        other = other if isinstance(other, Value) else Value(other)
+        return self.data < other.data
+    
+    def __gt__(self, other): # self > other
+        assert isinstance(other, (Value, int, float)), f"Can only compare a Value with either another Value, int or float. \nCan not compare with {type(other)=}"
+        other = other if isinstance(other, Value) else Value(other)
+        return self.data > other.data
+
+    # TODO: Implementing this creates a "class unhashable" error
+    # def __eq__(self, other):
+    #     assert isinstance(other, (Value, int, float)), f"Can only compare a Value with either another Value, int or float. \nCan not compare with {type(other)=}"
+    #     other = other if isinstance(other, Value) else Value(other)
+    #     return self.data == other.data
+    
+    def __le__(self, other): # self <= other
+        other = other if isinstance(other, Value) else Value(other)
+        return self < other or self.data == other.data
+    
+    def __ge__(self, other): # self >= other
+        other = other if isinstance(other, Value) else Value(other)
+        return self > other or self.data == other.data
 
     def debug(self)->str:
         """ Use to view the computational graph in text mode. """

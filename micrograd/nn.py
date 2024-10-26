@@ -33,7 +33,7 @@ class Neuron(Module):
                 case "sigmoid":
                     self.nonlin = lambda x: x.sigmoid()
         else:
-            self.nonlin = lambda x: x
+            self.nonlin = lambda x: x.linear()
             self.str_nonlin = 'linear'
 
     def __call__(self, x):
