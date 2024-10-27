@@ -74,11 +74,14 @@ class MLP(Module):
     nouts: A list of integers, where each integer specifies the number of neurons in each successive hidden layer.
     """
 
-    def __init__(self, nin:int, nouts:list):
+    def __init__(self, nin:int, nouts:list, nonlin:str=None):
         sz = [nin] + nouts
         self.layers = []
         for i in range(len(sz)-1):
-            nonlin = 'relu' if i != len(sz)-2 else None  # not applying nonlinearity to the last layer. Just calculating the logits.
+            if nonlin is None:
+                nonlin = 'relu' if i != len(sz)-2 else None  # not applying nonlinearity to the last layer. Just calculating the logits.
+            else:
+                nonlin = nonlin if i != len(sz)-2 else None
             self.layers.append(Layer(sz[i], sz[i+1], nonlin=nonlin))
 
     def __call__(self, x):

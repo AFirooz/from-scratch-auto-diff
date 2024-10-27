@@ -1,5 +1,3 @@
-import math
-
 class Value:
     """ Stores a single scalar value and its gradient.
     This class is used to represent a value in a computational graph and use that to calculate gradients computationally.
@@ -79,7 +77,8 @@ class Value:
         return out
 
     def sigmoid(self):
-        out = Value(1 / (1 + math.exp(-self.data)), _children=(self,), _op='Sigmoid')
+        num_out: Value = 1 / (1 + (-self).exp())
+        out = Value(data=num_out.data, _children=(self,), _op='Sigmoid')
 
         # see _backward implementation in __add__() and __mul__() for details
         def _backward():
@@ -93,11 +92,21 @@ class Value:
         out._backward = _backward
         return out
 
+    def exp(self):
+        e = 2.718281828459045
+        out = Value(e**self.data, (self,), 'exp')
+
+        def _backward():
+            self.grad += out.data * out.grad
+        out._backward = _backward
+
+        return out
+
     def linear(self):
         out = Value(self.data, (self,), 'Linear')
 
         def _backward():
-            self.grad += out.grad
+            self.grad = out.grad
         out._backward = _backward
 
         return out
@@ -178,7 +187,11 @@ class Value:
 
     def debug(self)->str:
         """ Use to view the computational graph in text mode. """
-        data_grad = f"data={self.data:.3f}, grad={self.grad:.3f}"
+        try:
+            data_grad = f"data={self.data:.3f}, grad={self.grad:.3f}"
+        except:
+            data_grad = f"data={self.data}, grad={self.grad}"
+
         data_label = f"{self.label}" if self.label is not None else "Value"
         
         # If no children, just return the data and grad info

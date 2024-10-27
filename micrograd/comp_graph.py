@@ -56,9 +56,14 @@ def draw_dot(root, format='svg', rankdir='BT'):
         # - Unique identifier based on object's memory address (id(n))
         # - Label showing node's data and gradient values in a record format
         # - Shape set to 'record' for structured display
+        try:
+            label = f"{{ {n.label} | data {n.data:.2f} | grad {n.grad:.3f} }}" if n.label is not None \
+                           else f"{{ data {n.data:.2f} | grad {n.grad:.3f} }}"
+        except:
+            label = f"{{ {n.label} | data {n.data} | grad {n.grad} }}" if n.label is not None \
+                           else f"{{ data {n.data} | grad {n.grad} }}"
         dot.node(name=str(id(n)), 
-                label = f"{{ {n.label} | data {n.data:.2f} | grad {n.grad:.3f} }}" if n.label is not None \
-                   else f"{{ data {n.data:.2f} | grad {n.grad:.3f} }}",
+                label=label,
                 shape='record')
         
         # If the node has an operation (_op), create an additional node for the operation
