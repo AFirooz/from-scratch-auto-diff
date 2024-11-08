@@ -3,7 +3,7 @@
 # sudo apt-get install graphviz
 
 from graphviz import Digraph
-from engine import Value
+from micrograd.engine import Value
 
 
 def _trace(root):
